@@ -55,6 +55,7 @@ class DerivedClass: public Polygon {
 #include <iostream>
 
 int main() {
+    // unused spaces are initialized as 0
     std::array<int, 5> arr = {65, 12, 31};
     std::sort(arr.begin(), arr.end());
 
@@ -93,7 +94,7 @@ int main() {
 #include <map>
 #include <string>
 
-void printMap(const std::map<std::string, float>& map) { // pass by reference to avoid a copy
+void printMap(const std::map<std::string, float>& map) { 
     for(const auto&[key, value] : map) {
         std::cout<<key<<": "<<value<<"\n";
     }
@@ -113,22 +114,24 @@ int main() {
 
 ```c++
 #include <iostream>
-#include <map>
-#include <string>
+#include <set>
 
-void printMap(const std::map<std::string, float>& map) { // pass by reference to avoid a copy
-    for(const auto&[key, value] : map) {
-        std::cout<<key<<": "<<value<<"\n";
-    }
+void checkElement(const std::set<int> &s, int element) {
+    if (s.count(element))
+      std::cout << element << " exists in the set\n";
 }
 
 int main() {
-    std::map<std::string, float> storageMap;
+    std::set<int> s = {10, 11};
+    s.insert(12);
 
-    storageMap["banana"] = 5.0;
-    storageMap["rice"] = 10.5;
+    // 12 appears one time, so true!
+    checkElement(s, 12);
 
-    printMap(storageMap);
+    s.erase(12);
+
+    // 12 is no longer here, so it won't print
+    checkElement(s, 12);
 }
 ```
 
@@ -179,11 +182,10 @@ int main() {
 }
 ```
 
-## References and pointers
+## Pointers and references
 
 ```c++
-#include <cstdlib>
-#include <iostream>;
+#include <iostream>
 
 void printArray(const int *array, int size) {
   std::cout << "Array: ";
@@ -211,15 +213,16 @@ int main() {
     
     // this will allocate 4 chunks of 4 bytes and return the address for the
     // pointer
-    int *pointerArray = (int *)malloc(4 * sizeof(int));
+    int *cppPointerArray = new int[4];
+
     for (int i = 0; i < 4; i++)
-      pointerArray[i] = i;
+      cppPointerArray[i] = i;
     
-    // will print: 'Array: 0 1 2 3'
-    printArray(pointerArray, 4);
-    
-    // memory that is manually allocated HAS to be deallocated
-    free(pointerArray);
+    // will print: 0 1 2 3 
+    printArray(cppPointerArray, 4);
+
+    // allocated memory HAS to be freed
+    delete[] cppPointerArray;
 }
 
 ```
@@ -251,17 +254,109 @@ int main() {
     // a reference doens't have to be explicitly passed to a function
     printVector(v);
 }
-
 ```
 
 ## Smart pointers
 
+```c++
+#include <iostream>
+#include <memory>
+
+class Vertex {
+private:
+    float x, y, z;
+
+public:
+    Vertex(int x, int y, int z) : x(x), y(y), z(z) {}
+    int getX() const { return x; }
+    int getY() const { return y; }
+    int getZ() const { return z; }
+
+    void printVertex() {
+      std::cout << "Vertex values -> x: " << x << ", y: " << y << " z: " << z
+                << "\n";
+    }
+};
+
+void printVertexSum(const Vertex &vertex) {
+    int sum = vertex.getX() + vertex.getY() + vertex.getZ();
+    std::cout << "Vertex sum: " << sum << "\n";
+}
+
+int main() {
+    std::unique_ptr<Vertex> vertex1(new Vertex(1, 1, 1));
+
+    vertex1->printVertex();
+
+    // passing by reference needs the '*' symbol
+    printVertexSum(*vertex1);
+
+    // memory allocated to smart pointers doesn't need to be manually freed!
+}
+```
+
+- `.reset()` can be used to manually free the memory before it leaves the scope.
+- you can also use `std::shared_pointer` for multiple owners,the memory is freed after all leave their scopes.
+- `std::weak_pointer` can be used if you don't want to prevent the memory from being freed.
+
 ## Templates
 
+```c++
+#include <iostream>
+
+template <typename T> 
+T arraySum(T *arr, int n) {
+    T sum = 0;
+    for (int i = 0; i < n; i++) {
+      sum += arr[i];
+    }
+    return sum;
+}
+
+int main() {
+    float arr[] = {1.44, 2.3, 3.1111, 4.76, 5.009, 6.124};
+    int i_arr[] = {1, 3, 4};
+    double d_arr[] = {4.4343243243243, 3.5324524432};
+
+    float sum = arraySum(arr, 6);
+    int sum_i = arraySum(i_arr, 3);
+    float sum_d = arraySum(d_arr, 2);
+    std::cout << sum << "\n";
+    std::cout << sum_i << "\n";
+    std::cout << sum_d << "\n";
+
+    return 0;
+}
+```
+
 ## Exception handling
+
+```c++
+#include <iostream>
+#include <stdexcept>
+
+void safeSelectFromArray(const int array[], int i, int size) {
+    if (i >= size) {
+      throw std::runtime_error(
+          "Attempted to select number outside of the array!");
+    }
+    // ...
+}
+
+int main() {
+    int array[2] = {0, 1};
+
+    try {
+      safeSelectFromArray(array, 3, 2);
+    } catch (const std::runtime_error &e) {
+      std::cerr << e.what() << std::endl;
+    }
+}
+
+```
 
 ## References
 
 - [cplusplus Reference](https://cplusplus.com/reference/)
 - [Cpp Reference](https://www.cppreference.com/)
-- [Microsoft Ignite](https://learn.microsoft.com/pt-br/cpp/cpp/smart-pointers-modern-cpp?view=msvc-170)
+- [Microsoft Ignite](https://learn.microsoft.com/cpp/cpp/smart-pointers-modern-cpp?view=msvc-170)
